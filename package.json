@@ -7,7 +7,7 @@
   "author": "Lutz Leonhardt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/copilot-proxy.git"
+    "url": "https://github.com/geekmdtravis/copilot-proxy.git"
   },
   "type": "commonjs",
   "main": "./out/extension.js",
@@ -54,7 +54,7 @@
     "build": "tsc",
     "start": "ts-node src/server.ts",
     "vsix": "vsce package",
-    "test_client": "cd src/client && ./run_client.sh"
+    "test_client": "conda activate 'copilot-proxy-env' && cd src/client && ./run_client.sh"
   },
   "dependencies": {
     "dotenv": "^16.0.0",

@@ -1,5 +1,79 @@
 # Copilot Proxy
 
+My personal fork of Copilot Proxy so that I can safely interface Aider with GitHub Copilot's LM API's.
+
+## Code Review for Malware
+
+I personally reviewed the code, and found no evidence of malware. I also had Gemini 2.5 Pro review it, and here is Gemini's summary.
+
+#### inspect this repository for evidence of malware
+
+Okay, I have reviewed the contents of the files you've provided: `.gitignore`, `LICENSE`, `environment.yaml`, `package.json`, `readme.md`, `src/client/client.py`, `src/client/requirements.txt`, `src/client/run_client.sh`, `src/extension.ts`, `src/server.ts`, `src/types.ts`, and `tsconfig.json`.
+
+Here's my inspection for evidence of malware:
+
+1.  **`package.json`**:
+
+    - **Dependencies**:
+      - `dotenv`: Used for loading environment variables. Standard and safe.
+      - `express`: A very common web framework for Node.js. Standard and safe.
+      - `morgan`: An HTTP request logger middleware for Node.js. Standard and safe.
+    - **DevDependencies**:
+      - `@types/*`: Type definitions for TypeScript. Standard and safe.
+      - `ts-node`: Allows direct execution of TypeScript files. Standard for development.
+      - `typescript`: The TypeScript compiler. Standard.
+      - `vsce`: The official tool for packaging VS Code extensions. Standard.
+      - `vscode`: Appears to be an older reference for VS Code API types; `@types/vscode` is more common now but this isn't inherently malicious.
+    - **Scripts**:
+      - `build`, `start`, `vsix`, `test_client`: These scripts use standard commands (`tsc`, `ts-node`, `vsce`, `cd`, `./run_client.sh`) for building, running, packaging the extension, and testing the client. The `test_client` script correctly executes the local shell script.
+    - **Repository URL**: `https://github.com/yourusername/copilot-proxy.git` is a placeholder. This is not malicious but indicates it might be a template or not yet fully configured for public release under its final name.
+    - **Overall**: The `package.json` file uses standard, well-known packages and scripts for typical development tasks of a VS Code extension. No suspicious dependencies or scripts are evident.
+
+2.  **`src/client/requirements.txt`**:
+
+    - `litellm`: This is a legitimate and popular Python library for simplifying calls to various LLM APIs.
+    - **Overall**: Clean.
+
+3.  **`src/client/run_client.sh`**:
+
+    - Sets `OPENAI_API_KEY="n/a"` and `OPENAI_API_BASE="http://localhost:3000/v1"`. This correctly configures the LiteLLM client to use the local proxy server running on port 3000, which is the purpose of this project.
+    - Executes `python client.py`.
+    - **Overall**: This script is benign and serves its intended purpose of testing the client against the local proxy.
+
+4.  **`src/client/client.py`**:
+
+    - Imports `os` and `litellm.completion`.
+    - Defines functions `run_litellm_non_stream` and `run_litellm_stream` that make calls to `litellm.completion` with a hardcoded prompt ("Create a fibonacci function in Python") and model ("gpt-4o").
+    - It relies on environment variables (set by `run_client.sh`) for `api_base` and `api_key`.
+    - Prints responses to the console.
+    - **Overall**: This is a straightforward test client. It does not perform any suspicious operations, file access, or network calls beyond what's configured for LiteLLM (which is to the local proxy).
+
+5.  **`src/extension.ts`**:
+
+    - Manages the lifecycle of an Express server (`startServer`, `serverInstance.close`).
+    - Uses `vscode.window.createOutputChannel` for logging, which is standard for VS Code extensions. Logs include request details, which is useful for debugging a proxy.
+    - `configurePort` function allows users to change the port via VS Code settings, which is a legitimate feature.
+    - `processChatRequest`:
+      - Extracts message content using `extractMessageContent`, which handles simple string and structured array content.
+      - Maps incoming messages to `vscode.LanguageModelChatMessage` format.
+      - Uses `vscode.lm.selectChatModels` and `selectedModel.sendRequest` to interact with the VS Code Language Model API (Copilot). This is the core, legitimate functionality.
+      - For streaming requests, it iterates over `chatResponse.text` and yields chunks formatted as `ChatCompletionChunk`.
+      - For non-streaming requests, it accumulates the response and formats it as `ChatCompletionResponse`.
+      - Error handling logs errors to the output channel.
+    - **Overall**: The extension code appears to be a clean implementation of a proxy. It uses official VS Code APIs as intended. There's no evidence of data exfiltration to unauthorized locations, obfuscated code, or execution of arbitrary commands.
+
+6.  **`src/server.ts`**:
+    - Uses Express to create an HTTP server.
+    - Uses `dotenv` for environment variables and `morgan` for logging HTTP requests to the console. Both are standard.
+    - The main endpoint `/v1/chat/completions`:
+      - Parses the request body.
+      - The line `req.body.model = model.split('/').pop()!;` is a legitimate transformation to extract the base model name (e.g., "claude-3.5-sonnet" from "openrouter/anthropic/claude-3.5-sonnet") for compatibility with the Copilot API.
+      - If `stream` is true, it sets appropriate headers for Server-Sent Events (SSE) and streams chunks from `processChatRequest`. It correctly writes data
+
+> Tokens: 6.3k sent, 1.2k received.
+
+# Original
+
 ## Overview
 
 Copilot Proxy is a Visual Studio Code extension that exposes the VS Code Language Model API via an Express server. This experimental extension is intended solely for research and prototyping purposes and should not be used in production environments.
@@ -21,17 +95,20 @@ At the moment, the supported LLMs by GitHub Copilot are: "gpt-4o", "gpt-4o-mini"
 ## Installation
 
 1. **Download the VSIX Package:**
-  - Visit the [GitHub Releases](https://github.com/lutzleonhardt/copilot-proxy/releases) page.
-  - Download the latest `.vsix` file.
+
+- Visit the [GitHub Releases](https://github.com/lutzleonhardt/copilot-proxy/releases) page.
+- Download the latest `.vsix` file.
 
 2. **Install the Extension:**
-  - Open Visual Studio Code.
-  - Go to the Extensions view (`Ctrl+Shift+X` on Windows/Linux or `Cmd+Shift+X` on macOS).
-  - Click on the three-dot menu (`...`) and choose **"Install from VSIX..."**.
-  - Select the downloaded `.vsix` file.
+
+- Open Visual Studio Code.
+- Go to the Extensions view (`Ctrl+Shift+X` on Windows/Linux or `Cmd+Shift+X` on macOS).
+- Click on the three-dot menu (`...`) and choose **"Install from VSIX..."**.
+- Select the downloaded `.vsix` file.
 
 3. **Reload VS Code:**
-  - Accept the prompt to reload the window and activate the extension.
+
+- Accept the prompt to reload the window and activate the extension.
 
 ## Configuration
 
@@ -41,6 +118,7 @@ The extension provides a configuration setting to specify the port for the Expre
   **Default:** `3000`
 
 You can change this setting in two ways:
+
 - **Via Settings UI:** Open the VS Code Settings (`Ctrl+,` or `Cmd+,`) and search for "Copilot Proxy".
 - **Via Command Palette:** Run the command **"Copilot Proxy: Configure Port"** to interactively set the port.
 
@@ -78,7 +156,6 @@ The content of the file should look like this:
     api_key: n/a
     api_base: http://localhost:3000/v1
 
-
 # "openrouter/anthropic/claude-3.5-sonnet" is the model name used in aider
 # "openai/claude-3.5-sonnet"
 # => "openai" tells LiteLLM to call an OpenAI-like endpoint
@@ -102,9 +179,8 @@ The content of the file should look like this:
 - name: aider/extra_params
   extra_params:
     api_key: n/a
-    api_base: http://localhost:3000/v1            
+    api_base: http://localhost:3000/v1
 ```
-
 
 ## Contributing
 
@@ -113,4 +189,3 @@ Contributions, bug reports, and feature requests are welcome! Please submit issu
 ## License
 
 This project is licensed under the MIT License.
-
