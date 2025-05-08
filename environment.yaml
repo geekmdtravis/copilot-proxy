@@ -1,0 +1,9 @@
+name: copilot-proxy-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12 # Or any other Python version you prefer
+  - pip
+  - pip:
+      - litellm
