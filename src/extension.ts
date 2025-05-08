@@ -133,7 +133,6 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
   }
 
   if (request.stream) {
-    // Streaming mode: call the real backend and yield response chunks.
     return (async function* () {
       try {
         const cancellationSource = new vscode.CancellationTokenSource();
@@ -144,8 +143,10 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
         );
         let firstChunk = true;
         let chunkIndex = 0;
-        // Iterate over the response fragments from the real backend.
+        let accumulatedContent = '';
+
         for await (const fragment of chatResponse.text) {
+          accumulatedContent += fragment;
           const chunk: ChatCompletionChunk = {
             id: `chatcmpl-stream-${chunkIndex}`,
             object: "chat.completion.chunk",
@@ -166,7 +167,10 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
           chunkIndex++;
           yield chunk;
         }
-        // After finishing the iteration, yield a final chunk to indicate completion.
+
+        request.messages.push({ role: "assistant", content: accumulatedContent });
+        outputChannel.appendLine(`Full messages: ${JSON.stringify(request.messages, null, 2)}`);
+
         const finalChunk: ChatCompletionChunk = {
           id: `chatcmpl-stream-final`,
           object: "chat.completion.chunk",
@@ -191,9 +195,8 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
         }
         throw error;
       }
-    })();  // Add parentheses here to properly close and invoke the IIFE
+    })();
   } else {
-    // Non-streaming mode: call the real backend and accumulate the full response.
     try {
       const cancellationSource = new vscode.CancellationTokenSource();
       const chatResponse = await selectedModel.sendRequest(
