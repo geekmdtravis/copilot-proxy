@@ -6,6 +6,59 @@ My personal fork of Copilot Proxy so that I can safely interface Aider with GitH
 
 I personally reviewed the code, and found no evidence of malware. I also had Gemini 2.5 Pro review it, and here is Gemini's summary.
 
+## Aider Configuration
+
+```
+# The below are custom configuration files that allow for Aider
+# to interact with alterantive server endpoints. This particular
+# configuration is for all available supported models as of
+# May 8th, 2025. Support was tested both locally and with Cline.
+# NOTE: this means that not all models returned by the Copilot LM
+# API are actually functional.
+
+- name: claude-3-5-sonnet-latest
+  extra_params:
+    model: openai/claude-3.5-sonnet
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+- name: gpt-4o
+  extra_params:
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+- name: gpt-4o-mini
+  extra_params:
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+- name: o3-mini
+  extra_params:
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+- name: gpt-4.1
+  extra_params:
+    model: gpt-4.1
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+- name: o1
+  extra_params:
+    model: openai/o1-ga
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+
+# This applies to all models, but really only works for OpenAI models largely.
+# It is kept here for legacy reasons, but all models I could find that
+# were supported by CoPilot Proxy (and tested in  Cline) are explicitly
+# defined above.
+- name: aider/extra_params
+  extra_params:
+    api_key: n/a
+    api_base: http://localhost:3000/v1
+```
+
 #### inspect this repository for evidence of malware
 
 Okay, I have reviewed the contents of the files you've provided: `.gitignore`, `LICENSE`, `environment.yaml`, `package.json`, `readme.md`, `src/client/client.py`, `src/client/requirements.txt`, `src/client/run_client.sh`, `src/extension.ts`, `src/server.ts`, `src/types.ts`, and `tsconfig.json`.

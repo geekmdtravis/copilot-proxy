@@ -1,75 +1,84 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 let outputChannel: vscode.OutputChannel;
-import { startServer } from './server';
+import { startServer } from "./server";
 import {
   ChatCompletionChunk,
   ChatCompletionRequest,
   ChatCompletionResponse,
-  StructuredMessageContent
-} from './types';
+  StructuredMessageContent,
+} from "./types";
 
 let serverInstance: ReturnType<typeof startServer> | undefined;
 
 function configurePort() {
   const config = vscode.workspace.getConfiguration("copilotProxy");
   const currentPort = config.get<number>("port", 3000);
-  vscode.window.showInputBox({
-    prompt: "Enter the port for the Express server:",
-    placeHolder: "e.g., 3000",
-    value: String(currentPort),
-    validateInput: (value: string): string | undefined => {
-      const port = Number(value);
-      if (isNaN(port) || port <= 0) {
-        return "Please enter a valid positive integer for the port.";
+  vscode.window
+    .showInputBox({
+      prompt: "Enter the port for the Express server:",
+      placeHolder: "e.g., 3000",
+      value: String(currentPort),
+      validateInput: (value: string): string | undefined => {
+        const port = Number(value);
+        if (isNaN(port) || port <= 0) {
+          return "Please enter a valid positive integer for the port.";
+        }
+        return undefined;
+      },
+    })
+    .then((newPortStr) => {
+      if (newPortStr !== undefined) {
+        const newPort = Number(newPortStr);
+        config.update("port", newPort, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(
+          `Port updated to ${newPort}. Restart the server if it's running.`
+        );
       }
-      return undefined;
-    }
-  }).then(newPortStr => {
-    if (newPortStr !== undefined) {
-      const newPort = Number(newPortStr);
-      config.update("port", newPort, vscode.ConfigurationTarget.Global);
-      vscode.window.showInformationMessage(`Port updated to ${newPort}. Restart the server if it's running.`);
-    }
-  });
+    });
 }
 
-
 export function activate(context: vscode.ExtensionContext) {
-  outputChannel = vscode.window.createOutputChannel('Copilot Proxy Log');
+  outputChannel = vscode.window.createOutputChannel("Copilot Proxy Log");
   outputChannel.show();
   context.subscriptions.push(outputChannel);
   outputChannel.appendLine('Extension "Copilot Proxy" is now active!');
 
   // Register command to start the Express server.
   context.subscriptions.push(
-    vscode.commands.registerCommand('Copilot Proxy - Start Server', () => {
+    vscode.commands.registerCommand("Copilot Proxy - Start Server", () => {
       if (!serverInstance) {
-        const configPort = vscode.workspace.getConfiguration("copilotProxy").get("port", 3000);
+        const configPort = vscode.workspace
+          .getConfiguration("copilotProxy")
+          .get("port", 3000);
         serverInstance = startServer(configPort);
-        vscode.window.showInformationMessage(`Express server started on port ${configPort}.`);
+        vscode.window.showInformationMessage(
+          `Express server started on port ${configPort}.`
+        );
       } else {
-        vscode.window.showInformationMessage('Express server is already running.');
+        vscode.window.showInformationMessage(
+          "Express server is already running."
+        );
       }
     })
   );
 
   // Register command to stop the Express server.
   context.subscriptions.push(
-    vscode.commands.registerCommand('Copilot Proxy - Stop Server', () => {
+    vscode.commands.registerCommand("Copilot Proxy - Stop Server", () => {
       if (serverInstance) {
         serverInstance.close();
         serverInstance = undefined;
-        vscode.window.showInformationMessage('Express server stopped.');
+        vscode.window.showInformationMessage("Express server stopped.");
       } else {
-        vscode.window.showInformationMessage('No Express server is running.');
+        vscode.window.showInformationMessage("No Express server is running.");
       }
     })
   );
 
   // Register command to configure the port.
   context.subscriptions.push(
-    vscode.commands.registerCommand('Copilot Proxy: Configure Port', () => {
+    vscode.commands.registerCommand("Copilot Proxy: Configure Port", () => {
       configurePort();
     })
   );
@@ -79,9 +88,9 @@ export function activate(context: vscode.ExtensionContext) {
     dispose: () => {
       if (serverInstance) {
         serverInstance.close();
-        outputChannel.appendLine('Express server has been stopped.');
+        outputChannel.appendLine("Express server has been stopped.");
       }
-    }
+    },
   });
 }
 
@@ -89,32 +98,50 @@ export function deactivate() {
   if (serverInstance) {
     serverInstance.close();
     serverInstance = undefined;
-    outputChannel.appendLine('Express server has been stopped on deactivation.');
+    outputChannel.appendLine(
+      "Express server has been stopped on deactivation."
+    );
   }
 }
 
-function extractMessageContent(content: string | StructuredMessageContent[]): string {
-  if (typeof content === 'string') {
+function extractMessageContent(
+  content: string | StructuredMessageContent[]
+): string {
+  if (typeof content === "string") {
     return content;
   }
   if (Array.isArray(content)) {
-    return content.map(item => item.text).join('\n');
+    return content.map((item) => item.text).join("\n");
   }
   return String(content);
 }
 
-export async function processChatRequest(request: ChatCompletionRequest): Promise<AsyncIterable<ChatCompletionChunk> | ChatCompletionResponse> {
-  const userMessages = request.messages.filter(message => message.role.toLowerCase() === "user");
-  const latestUserMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].content : '';
-  const preview = typeof latestUserMessage === 'string' 
-    ? (latestUserMessage.length > 30 ? latestUserMessage.slice(0, 30) + '...' : latestUserMessage)
-    : JSON.stringify(latestUserMessage);
-  
-  outputChannel.appendLine(`Request received. Model: ${request.model}. Preview: ${preview}`);
-  outputChannel.appendLine(`Full messages: ${JSON.stringify(request.messages, null, 2)}`);
-  
+export async function processChatRequest(
+  request: ChatCompletionRequest
+): Promise<AsyncIterable<ChatCompletionChunk> | ChatCompletionResponse> {
+  const userMessages = request.messages.filter(
+    (message) => message.role.toLowerCase() === "user"
+  );
+  const latestUserMessage =
+    userMessages.length > 0
+      ? userMessages[userMessages.length - 1].content
+      : "";
+  const preview =
+    typeof latestUserMessage === "string"
+      ? latestUserMessage.length > 30
+        ? latestUserMessage.slice(0, 30) + "..."
+        : latestUserMessage
+      : JSON.stringify(latestUserMessage);
+
+  outputChannel.appendLine(
+    `Request received. Model: ${request.model}. Preview: ${preview}`
+  );
+  outputChannel.appendLine(
+    `Full messages: ${JSON.stringify(request.messages, null, 2)}`
+  );
+
   // Map request messages to vscode.LanguageModelChatMessage format with content extraction
-  const chatMessages = request.messages.map(message => {
+  const chatMessages = request.messages.map((message) => {
     const processedContent = extractMessageContent(message.content);
     if (message.role.toLowerCase() === "user") {
       return vscode.LanguageModelChatMessage.User(processedContent);
@@ -122,13 +149,16 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
       return vscode.LanguageModelChatMessage.Assistant(processedContent);
     }
   });
-
+  // const allModels = await vscode.lm.selectChatModels({ vendor: "copilot" });
+  // outputChannel.appendLine(JSON.stringify(allModels, null, 2));
   const [selectedModel] = await vscode.lm.selectChatModels({
     vendor: "copilot",
     family: request.model,
   });
   if (!selectedModel) {
-    outputChannel.appendLine(`ERROR: No language model available for model: ${request.model}`);
+    outputChannel.appendLine(
+      `ERROR: No language model available for model: ${request.model}`
+    );
     throw new Error(`No language model available for model: ${request.model}`);
   }
 
@@ -143,7 +173,7 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
         );
         let firstChunk = true;
         let chunkIndex = 0;
-        let accumulatedContent = '';
+        let accumulatedContent = "";
 
         for await (const fragment of chatResponse.text) {
           accumulatedContent += fragment;
@@ -168,8 +198,13 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
           yield chunk;
         }
 
-        request.messages.push({ role: "assistant", content: accumulatedContent });
-        outputChannel.appendLine(`Full messages: ${JSON.stringify(request.messages, null, 2)}`);
+        request.messages.push({
+          role: "assistant",
+          content: accumulatedContent,
+        });
+        outputChannel.appendLine(
+          `Full messages: ${JSON.stringify(request.messages, null, 2)}`
+        );
 
         const finalChunk: ChatCompletionChunk = {
           id: `chatcmpl-stream-final`,
@@ -191,7 +226,9 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
           outputChannel.appendLine(`Message: ${error.message}`);
           outputChannel.appendLine(`Stack: ${error.stack}`);
         } else {
-          outputChannel.appendLine(`Unknown error type: ${JSON.stringify(error)}`);
+          outputChannel.appendLine(
+            `Unknown error type: ${JSON.stringify(error)}`
+          );
         }
         throw error;
       }
@@ -232,7 +269,9 @@ export async function processChatRequest(request: ChatCompletionRequest): Promis
         outputChannel.appendLine(`Message: ${error.message}`);
         outputChannel.appendLine(`Stack: ${error.stack}`);
       } else {
-        outputChannel.appendLine(`Unknown error type: ${JSON.stringify(error)}`);
+        outputChannel.appendLine(
+          `Unknown error type: ${JSON.stringify(error)}`
+        );
       }
       throw error;
     }
