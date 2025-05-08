@@ -8,7 +8,7 @@ The following is an example `.aider.model.settings.yml` which you
 can put either in your home directory (likely the best option) or
 another supported location.
 
-```
+```yaml
 # The below are custom configuration files that allow for Aider
 # to interact with alterantive server endpoints. This particular
 # configuration is for all available supported models as of
