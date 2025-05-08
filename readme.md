@@ -2,10 +2,6 @@
 
 My personal fork of Copilot Proxy so that I can safely interface Aider with GitHub Copilot's LM API's.
 
-## Code Review for Malware
-
-I personally reviewed the code, and found no evidence of malware. I also had Gemini 2.5 Pro review it, and here is Gemini's summary.
-
 ## Aider Configuration
 
 The following is an example `.aider.model.settings.yml` which you
@@ -62,6 +58,10 @@ another supported location.
     api_key: n/a
     api_base: http://localhost:3000/v1
 ```
+
+## Code Review for Malware
+
+I personally reviewed the code, and found no evidence of malware. I also had Gemini 2.5 Pro review it, and here is Gemini's summary.
 
 #### inspect this repository for evidence of malware
 
