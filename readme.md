@@ -59,6 +59,21 @@ another supported location.
     api_base: http://localhost:3000/v1
 ```
 
+## Preferred Settings for Git and Input
+
+Preferred minimmum settings for `.aider.conf.yml` to avoid insane LLM behavior
+like auto-committing changes, working in dirty repositories, and to avoid accidental
+request submissions when providing more than one line of input.
+
+```yaml
+auto-accept-architect: false
+show-diffs: true
+auto-commits: false
+dirty-commits: false
+vim: true
+multiline: true
+```
+
 ## Code Review for Malware
 
 I personally reviewed the code, and found no evidence of malware. I also had Gemini 2.5 Pro review it, and here is Gemini's summary.

@@ -32,7 +32,7 @@ function configurePort() {
         const newPort = Number(newPortStr);
         config.update("port", newPort, vscode.ConfigurationTarget.Global);
         vscode.window.showInformationMessage(
-          `Port updated to ${newPort}. Restart the server if it's running.`
+          `Port updated to ${newPort}. Restart the server if it's running.`,
         );
       }
     });
@@ -53,14 +53,14 @@ export function activate(context: vscode.ExtensionContext) {
           .get("port", 3000);
         serverInstance = startServer(configPort);
         vscode.window.showInformationMessage(
-          `Express server started on port ${configPort}.`
+          `Express server started on port ${configPort}.`,
         );
       } else {
         vscode.window.showInformationMessage(
-          "Express server is already running."
+          "Express server is already running.",
         );
       }
-    })
+    }),
   );
 
   // Register command to stop the Express server.
@@ -73,14 +73,14 @@ export function activate(context: vscode.ExtensionContext) {
       } else {
         vscode.window.showInformationMessage("No Express server is running.");
       }
-    })
+    }),
   );
 
   // Register command to configure the port.
   context.subscriptions.push(
     vscode.commands.registerCommand("Copilot Proxy: Configure Port", () => {
       configurePort();
-    })
+    }),
   );
 
   // Register a disposable to stop the server when the extension is deactivated.
@@ -99,13 +99,13 @@ export function deactivate() {
     serverInstance.close();
     serverInstance = undefined;
     outputChannel.appendLine(
-      "Express server has been stopped on deactivation."
+      "Express server has been stopped on deactivation.",
     );
   }
 }
 
 function extractMessageContent(
-  content: string | StructuredMessageContent[]
+  content: string | StructuredMessageContent[],
 ): string {
   if (typeof content === "string") {
     return content;
@@ -117,10 +117,10 @@ function extractMessageContent(
 }
 
 export async function processChatRequest(
-  request: ChatCompletionRequest
+  request: ChatCompletionRequest,
 ): Promise<AsyncIterable<ChatCompletionChunk> | ChatCompletionResponse> {
   const userMessages = request.messages.filter(
-    (message) => message.role.toLowerCase() === "user"
+    (message) => message.role.toLowerCase() === "user",
   );
   const latestUserMessage =
     userMessages.length > 0
@@ -134,10 +134,10 @@ export async function processChatRequest(
       : JSON.stringify(latestUserMessage);
 
   outputChannel.appendLine(
-    `Request received. Model: ${request.model}. Preview: ${preview}`
+    `Request received. Model: ${request.model}. Preview: ${preview}`,
   );
   outputChannel.appendLine(
-    `Full messages: ${JSON.stringify(request.messages, null, 2)}`
+    `Full messages: ${JSON.stringify(request.messages, null, 2)}`,
   );
 
   // Map request messages to vscode.LanguageModelChatMessage format with content extraction
@@ -157,7 +157,7 @@ export async function processChatRequest(
   });
   if (!selectedModel) {
     outputChannel.appendLine(
-      `ERROR: No language model available for model: ${request.model}`
+      `ERROR: No language model available for model: ${request.model}`,
     );
     throw new Error(`No language model available for model: ${request.model}`);
   }
@@ -169,7 +169,7 @@ export async function processChatRequest(
         const chatResponse = await selectedModel.sendRequest(
           chatMessages,
           {},
-          cancellationSource.token
+          cancellationSource.token,
         );
         let firstChunk = true;
         let chunkIndex = 0;
@@ -203,7 +203,7 @@ export async function processChatRequest(
           content: accumulatedContent,
         });
         outputChannel.appendLine(
-          `Full messages: ${JSON.stringify(request.messages, null, 2)}`
+          `Full messages: ${JSON.stringify(request.messages, null, 2)}`,
         );
 
         const finalChunk: ChatCompletionChunk = {
@@ -227,7 +227,7 @@ export async function processChatRequest(
           outputChannel.appendLine(`Stack: ${error.stack}`);
         } else {
           outputChannel.appendLine(
-            `Unknown error type: ${JSON.stringify(error)}`
+            `Unknown error type: ${JSON.stringify(error)}`,
           );
         }
         throw error;
@@ -239,7 +239,7 @@ export async function processChatRequest(
       const chatResponse = await selectedModel.sendRequest(
         chatMessages,
         {},
-        cancellationSource.token
+        cancellationSource.token,
       );
       let fullContent = "";
       for await (const fragment of chatResponse.text) {
@@ -270,7 +270,7 @@ export async function processChatRequest(
         outputChannel.appendLine(`Stack: ${error.stack}`);
       } else {
         outputChannel.appendLine(
-          `Unknown error type: ${JSON.stringify(error)}`
+          `Unknown error type: ${JSON.stringify(error)}`,
         );
       }
       throw error;
